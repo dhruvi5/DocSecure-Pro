@@ -1,0 +1,23 @@
+{
+  "properties": [
+    {
+      "name": "spring.jpa.show:sql",
+      "type": "java.lang.String",
+      "description": "Description for spring.jpa.show:sql."
+    },
+    {
+      "name": "spring.server",
+      "type": "java.lang.String",
+      "description": "Description for spring.server."
+    },
+    {
+      "name": "spring.server.port",
+      "type": "java.lang.String",
+      "description": "Description for spring.server.port."
+    },
+    {
+      "name": "spring.api.base.path",
+      "type": "java.lang.String",
+      "description": "Description for spring.api.base.path."
+    }
+  ] }
