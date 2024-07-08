@@ -1,77 +1,116 @@
+//package com.airtel.crud.security.filter;
+//
+//import com.airtel.crud.security.converter.UserAuthenticationConverter;
+//import jakarta.servlet.http.HttpServletRequest;
+//import jakarta.servlet.http.HttpServletResponse;
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
+//import org.springframework.security.authentication.AuthenticationManager;
+//import org.springframework.security.authentication.AuthenticationServiceException;
+//import org.springframework.security.core.Authentication;
+//import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+//import org.springframework.stereotype.Component;
+//
+//@Component
+//public class UserAuthenticationProcessingFilter extends UsernamePasswordAuthenticationFilter {
+//
+//    private static final Logger logger = LoggerFactory.getLogger(UserAuthenticationProcessingFilter.class);
+//    private final UserAuthenticationConverter authenticationConverter;
+//
+//    public UserAuthenticationProcessingFilter(AuthenticationManager authenticationManager, UserAuthenticationConverter authenticationConverter) {
+//        super.setAuthenticationManager(authenticationManager);
+//        this.authenticationConverter = authenticationConverter;
+//    }
+//
+//    @Override
+//    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) {
+//        logger.info("Attempting authentication with request: {}", request.getRequestURI());
+//
+//        Authentication authentication = authenticationConverter.convert(request);
+//        if (authentication == null) {
+//            throw new AuthenticationServiceException("Authentication object returned by converter is null");
+//        }
+//
+//        return getAuthenticationManager().authenticate(authentication);
+//    }
+//
+//    @Override
+//    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+//                                            jakarta.servlet.FilterChain chain, Authentication authResult)
+//            throws java.io.IOException, jakarta.servlet.ServletException {
+//        super.successfulAuthentication(request, response, chain, authResult);
+//        chain.doFilter(request, response);
+//    }
+//
+//    @Override
+//    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+//                                              org.springframework.security.core.AuthenticationException failed)
+//            throws java.io.IOException, jakarta.servlet.ServletException {
+//        String username = request.getParameter("username");
+//        logger.error("Authentication failed for username: {}", username != null ? username : "Unknown", failed);
+//        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+//    }
+//}
 package com.airtel.crud.security.filter;
 
 import com.airtel.crud.security.converter.UserAuthenticationConverter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
-import org.springframework.security.web.authentication.AuthenticationConverter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Component;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component
-public class UserAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
+public class UserAuthenticationProcessingFilter extends UsernamePasswordAuthenticationFilter {
 
-    private final AuthenticationConverter converter = new UserAuthenticationConverter();
-private static final Logger logger = LoggerFactory.getLogger(UserAuthenticationProcessingFilter.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserAuthenticationProcessingFilter.class);
+    private final UserAuthenticationConverter authenticationConverter;
 
-    public UserAuthenticationProcessingFilter(AuthenticationManager manager) {
-        super(new AntPathRequestMatcher("/api/login"), manager);
-        setAuthenticationManager(manager);
-
+    public UserAuthenticationProcessingFilter(AuthenticationManager authenticationManager, UserAuthenticationConverter authenticationConverter) {
+        super.setAuthenticationManager(authenticationManager);
+        this.authenticationConverter = authenticationConverter;
     }
 
-//    @Override
-//    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
-//        Authentication authentication = converter.convert(request);
-//        return getAuthenticationManager().authenticate(authentication);
-//    }
-@Override
-public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
-        throws AuthenticationException, IOException, ServletException {
-    // Check if converter is initialized
-    if (converter == null) {
-        throw new AuthenticationServiceException("Converter is not initialized");
+    @Override
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+            throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) req;
+        HttpServletResponse response = (HttpServletResponse) res;
+
+        try {
+            Authentication authentication = attemptAuthentication(request, response);
+            if (authentication == null) {
+                unsuccessfulAuthentication(request, response, new AuthenticationServiceException("Authentication object returned by converter is null"));
+                return;
+            }
+
+            successfulAuthentication(request, response, chain, authentication);
+        } catch (AuthenticationServiceException failed) {
+            unsuccessfulAuthentication(request, response, failed);
+        }
     }
 
-    // Convert the request to an Authentication object
-    Authentication authentication = converter.convert(request);
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) {
+        logger.info("Attempting authentication with request: {}", request.getRequestURI());
 
-    if (authentication == null) {
-        throw new AuthenticationServiceException("Authentication object returned by converter is null");
-    }
+        Authentication authentication = authenticationConverter.convert(request);
+        if (authentication == null) {
+            throw new AuthenticationServiceException("Authentication object returned by converter is null");
+        }
 
-    try {
-        // Authenticate using AuthenticationManager
         return getAuthenticationManager().authenticate(authentication);
-    } catch (AuthenticationException e) {
-        // Handle authentication failure or rethrow to be handled by Spring Security
-        throw e;
     }
-}
-
-//@Override
-//public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
-//
-//        throws AuthenticationException, IOException, ServletException {
-//    String username = request.getParameter("username");
-//    String password = request.getParameter("password");
-//    logger.info("Attempting authentication with username: {}");
-//    logger.debug("Password received: {}");
-//    return getAuthenticationManager().authenticate(
-//            new UsernamePasswordAuthenticationToken(username, password)
-//    );
-//}
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
@@ -80,10 +119,12 @@ public Authentication attemptAuthentication(HttpServletRequest request, HttpServ
         super.successfulAuthentication(request, response, chain, authResult);
         chain.doFilter(request, response);
     }
+
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-                                              AuthenticationException failed) throws IOException, ServletException {
-        String username = request.getParameter("username"); // Adjusted to get username from request parameter if available
+                                              org.springframework.security.core.AuthenticationException failed)
+            throws IOException, ServletException {
+        String username = request.getParameter("username");
         logger.error("Authentication failed for username: {}", username != null ? username : "Unknown", failed);
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
     }

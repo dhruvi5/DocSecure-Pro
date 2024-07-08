@@ -39,7 +39,7 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
         logger.debug("Authenticating user: {}", username);
 
         Optional<CustomUser> user = Optional.ofNullable(repo.findByUsername(username));
-//        logger.debug("Attempting authentication for username: {}", user);
+        logger.debug("Attempting authentication for username: {}", user);
 //        if (!user.isPresent()) {
 //            logger.debug("User not found: {}", user);
 //

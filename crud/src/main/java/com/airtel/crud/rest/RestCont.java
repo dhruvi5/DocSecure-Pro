@@ -4,15 +4,17 @@ import com.airtel.crud.dto.CustomUser;
 import com.airtel.crud.dto.Employee;
 import com.airtel.crud.repo.UserRepo;
 import com.airtel.crud.service.EmployeeService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -123,33 +125,46 @@ public class RestCont {
 
     private PasswordEncoder passwordEncoder;
 
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody Map<String, String> credentials) {
+//    @PostMapping("/login")
+//    public ResponseEntity<String> login(@RequestBody Map<String, String> credentials) {
+//        String username = credentials.get("username");
+//        String password = credentials.get("password");
+//        System.out.println("Received login request with credentials: " + credentials);
+@PostMapping("/login")
+public ResponseEntity<String> login(HttpServletRequest request) {
+    try {
+        // Read credentials from request body using ObjectMapper
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, String> credentials = objectMapper.readValue(request.getInputStream(), Map.class);
+
+
         String username = credentials.get("username");
         String password = credentials.get("password");
-        System.out.println("Received login request with credentials: " + credentials);
-        logger.info("Received login request with username: {}", username);
-        if ("dhruvi".equals(username) && "1234".equals(password)) {
-            logger.info("User '{}' successfully logged in", username);
-            return ResponseEntity.ok().build(); // Return HTTP 200 OK for successful login
-        } else {
-            logger.warn("Failed login attempt for user '{}'", username);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // Return HTTP 401 Unauthorized for failed login
-        }
-//        boolean isAuthenticated = authenticateUser(username, password);
-//        if (isAuthenticated) {
-//            return new ResponseEntity<>("Login successful", HttpStatus.OK);
-//        } else {
-//            return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
-//        }
-    }
 
+        // Authenticate the user
+        boolean isAuthenticated = authenticateUser(username, password);
+        if (isAuthenticated) {
+            logger.info("Login successful for user: {}", username);
+            return ResponseEntity.ok("Login successful");
+        } else {
+            logger.warn("Login failed for user: {}", username);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        }
+    } catch (IOException e) {
+        logger.error("Error reading credentials from request", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during login");
+    }
+}
     private boolean authenticateUser(String username, String password) {
+        // Retrieve user from database based on username
         CustomUser user = userRepo.findByUsername(username);
-        if (user != null && passwordEncoder != null) {
+
+        if (user != null) {
+            // Compare provided password with encoded password from database
             return passwordEncoder.matches(password, user.getPassword());
         }
-        return false;
+
+        return false; // User not found or password doesn't match
     }
 
     @GetMapping("/emp/{eid}")
