@@ -125,47 +125,23 @@ public class RestCont {
 
     private PasswordEncoder passwordEncoder;
 
-//    @PostMapping("/login")
-//    public ResponseEntity<String> login(@RequestBody Map<String, String> credentials) {
-//        String username = credentials.get("username");
-//        String password = credentials.get("password");
-//        System.out.println("Received login request with credentials: " + credentials);
-@PostMapping("/login")
-public ResponseEntity<String> login(HttpServletRequest request) {
-    try {
-        // Read credentials from request body using ObjectMapper
-        ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, String> credentials = objectMapper.readValue(request.getInputStream(), Map.class);
-
-
-        String username = credentials.get("username");
-        String password = credentials.get("password");
-
-        // Authenticate the user
-        boolean isAuthenticated = authenticateUser(username, password);
-        if (isAuthenticated) {
-            logger.info("Login successful for user: {}", username);
-            return ResponseEntity.ok("Login successful");
-        } else {
-            logger.warn("Login failed for user: {}", username);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
-        }
-    } catch (IOException e) {
-        logger.error("Error reading credentials from request", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during login");
-    }
-}
-    private boolean authenticateUser(String username, String password) {
-        // Retrieve user from database based on username
-        CustomUser user = userRepo.findByUsername(username);
-
-        if (user != null) {
-            // Compare provided password with encoded password from database
-            return passwordEncoder.matches(password, user.getPassword());
-        }
-
-        return false; // User not found or password doesn't match
-    }
+////    @PostMapping("/login")
+////    public ResponseEntity<String> login(@RequestBody Map<String, String> credentials) {
+////        String username = credentials.get("username");
+////        String password = credentials.get("password");
+////        System.out.println("Received login request with credentials: " + credentials);
+//
+//    private boolean authenticateUser(String username, String password) {
+//        // Retrieve user from database based on username
+//        CustomUser user = userRepo.findByUsername(username);
+//
+//        if (user != null) {
+//            // Compare provided password with encoded password from database
+//            return passwordEncoder.matches(password, user.getPassword());
+//        }
+//
+//        return false; // User not found or password doesn't match
+//    }
 
     @GetMapping("/emp/{eid}")
     public ResponseEntity<Employee> getEmp(@PathVariable Long eid) {

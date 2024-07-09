@@ -1,5 +1,6 @@
 package com.airtel.crud.corsconfig;
 
+import com.airtel.crud.Cache.CacheFilter;
 import com.airtel.crud.security.converter.UserAuthenticationConverter;
 import com.airtel.crud.security.filter.UserAuthenticationProcessingFilter;
 import com.airtel.crud.security.provider.UserAuthenticationProvider;
@@ -34,7 +35,7 @@ public class SecurityConfig {
     private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // Inject PasswordEncoder bean
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private UserAuthenticationConverter userAuthenticationConverter;
@@ -49,8 +50,8 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
                 .authorizeRequests()
-                .requestMatchers("/api/login").permitAll() // Example: allow public endpoints
-                .requestMatchers(HttpMethod.OPTIONS).permitAll() // Allow pre-flight requests
+                .requestMatchers("/api/login").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS).permitAll()
                 .anyRequest().authenticated()
                 .and()
 //                .addFilterBefore(cacheFilter(), UsernamePasswordAuthenticationFilter.class)
@@ -68,15 +69,15 @@ public class SecurityConfig {
         return customUserDetailsService;
     }
 //
-//    @Bean
-//    public FilterRegistrationBean<CacheFilter> cacheFilter() {
-//        FilterRegistrationBean<CacheFilter> registrationBean=new FilterRegistrationBean<>();
-//        CacheFilter userFilter=new CacheFilter();
-//        registrationBean.setFilter(userFilter);
-//        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
-//        return registrationBean;
-//
-//    }
+    @Bean
+    public FilterRegistrationBean<CacheFilter> cacheFilter() {
+        FilterRegistrationBean<CacheFilter> registrationBean=new FilterRegistrationBean<>();
+        CacheFilter userFilter=new CacheFilter();
+        registrationBean.setFilter(userFilter);
+        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registrationBean;
+
+    }
 
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
